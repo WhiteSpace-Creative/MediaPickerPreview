@@ -1,7 +1,5 @@
 ﻿Imports Microsoft.VisualBasic
-Imports umbraco.Web.BaseRest
-Imports umbraco.interfaces
-Imports umbraco.Web
+Imports Umbraco.Web.BaseRest
 
 Namespace WSC.MediaPickerPreview
     <RestExtension("MediaPickerPreview")>
@@ -24,26 +22,34 @@ Namespace WSC.MediaPickerPreview
             Return url
         End Function
     End Class
-    Public Class StartupHandlers
-        Implements IApplicationEventHandler, IApplicationStartupHandler
 
-        Public Sub OnApplicationInitialized(httpApplication As umbraco.Web.UmbracoApplication, applicationContext As umbraco.Core.ApplicationContext) Implements umbraco.Web.IApplicationEventHandler.OnApplicationInitialized
+    Public Class HttpModule
+        Implements IHttpModule
 
-        End Sub
-
-        Public Sub OnApplicationStarted(httpApplication As umbraco.Web.UmbracoApplication, applicationContext As umbraco.Core.ApplicationContext) Implements umbraco.Web.IApplicationEventHandler.OnApplicationStarted
-            AddHandler umbraco.presentation.masterpages.umbracoPage.Load, AddressOf umbracoPage_Load
-        End Sub
-
-        Public Sub OnApplicationStarting(httpApplication As umbraco.Web.UmbracoApplication, applicationContext As umbraco.Core.ApplicationContext) Implements umbraco.Web.IApplicationEventHandler.OnApplicationStarting
+        Public Sub Dispose() Implements System.Web.IHttpModule.Dispose
 
         End Sub
 
-        Private Sub umbracoPage_Load(sender As Object, e As EventArgs)
-            Dim up As umbraco.presentation.masterpages.umbracoPage = DirectCast(sender, umbraco.presentation.masterpages.umbracoPage)
+        Public Sub Init(context As System.Web.HttpApplication) Implements System.Web.IHttpModule.Init
+            AddHandler context.PostMapRequestHandler, AddressOf context_PostMapRequest
+        End Sub
 
-            Dim script As String = "$(function(){$('.treePickerTitle').each(function(i,e){var container = $(this).parents('.propertyItemContent');var image = $('<img width=""200"" style=""display:block; margin-top:10px;"" />').appendTo(container);var input = container.find('input');var _default = input.val();input.on('change', function(){image.hide().prop('src','');var url = '/base/MediaPickerPreview/GetImageUrl/'+ input.val() +'/200';$.get(url, function(data){ if (data != ''){ image.prop('src', data).show(); } });}).trigger('change');setInterval(function () {if (input.val() !== _default ) { input.trigger('change'); _default  = input.val(); }}, 1000);});});"
-            up.Page.ClientScript.RegisterClientScriptBlock(up.GetType, "MediaPreview", script, True)
+        Private Sub context_PostMapRequest(sender As Object, e As EventArgs)
+            Dim umbracoPath As String = (umbraco.GlobalSettings.Path & "/")
+            Dim application As HttpApplication = CType(sender, HttpApplication)
+            Dim context As HttpContext = application.Context
+            If context.Request.CurrentExecutionFilePath.StartsWith(umbracoPath, StringComparison.CurrentCultureIgnoreCase) Then
+                Dim page As Page = TryCast(HttpContext.Current.CurrentHandler, Page)
+                If ((Not page Is Nothing) AndAlso Not umbraco.Web.UmbracoContext.Current.InPreviewMode) Then
+                    AddHandler page.Load, AddressOf umbracoPage_Load
+                End If
+            End If
+        End Sub
+
+        Public Sub umbracoPage_Load(sender As Object, e As EventArgs)
+            Dim p As Page = DirectCast(sender, Page)
+            Dim script As String = "$(function(){$('.treePickerTitle').each(function(i,e){ var container = $(this).parent().parent();var image = $('<img />',{ style: 'width:200px; margin-top: 10px; display:block;'}).appendTo(container);var input = container.find('input');var _default = input.val();input.on('change', function(){image.hide().prop('src','');var url = '/base/MediaPickerPreview/GetImageUrl/'+ input.val() +'/200';$.get(url, function(data){ if (data != ''){ image.prop('src', data).show(); } });}).trigger('change');setInterval(function () {if (input.val() !== _default ) { input.trigger('change'); _default  = input.val(); }}, 1000);});});"
+            p.Page.ClientScript.RegisterClientScriptBlock(p.GetType, "MediaPickerPreview", script, True)
         End Sub
 
     End Class
