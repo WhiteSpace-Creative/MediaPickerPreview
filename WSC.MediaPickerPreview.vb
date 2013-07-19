@@ -15,11 +15,24 @@ Namespace WSC.MediaPickerPreview
                 format = "{0}?w={1}"
             End If
             Try
-                Dim m As New umbraco.cms.businesslogic.media.Media(id)
+                Dim m As New Umbraco.cms.businesslogic.media.Media(id)
+                'Dim path As New List(Of String)
+                'Dim p As New Umbraco.cms.businesslogic.CMSNode(m.Id)
+                'Do
+                '    path.Add(p.Text)
+                '    p = p.Parent
+                'Loop Until p.ParentId < 0
+                'path.Add(p.Text)
+                'path.Reverse()
+
+
                 url = String.Format(format, m.getProperty("umbracoFile").Value, width)
+                'Return String.Format("{{""url"":""{0}"", ""path"":""{1}""}}", url, String.Join(" > ", path.ToArray))
+                Return url
+
             Catch ex As Exception
+                Return String.Empty
             End Try
-            Return url
         End Function
     End Class
 
