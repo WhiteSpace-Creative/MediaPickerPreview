@@ -16,18 +16,7 @@ Namespace WSC.MediaPickerPreview
             End If
             Try
                 Dim m As New Umbraco.cms.businesslogic.media.Media(id)
-                'Dim path As New List(Of String)
-                'Dim p As New Umbraco.cms.businesslogic.CMSNode(m.Id)
-                'Do
-                '    path.Add(p.Text)
-                '    p = p.Parent
-                'Loop Until p.ParentId < 0
-                'path.Add(p.Text)
-                'path.Reverse()
-
-
                 url = String.Format(format, m.getProperty("umbracoFile").Value, width)
-                'Return String.Format("{{""url"":""{0}"", ""path"":""{1}""}}", url, String.Join(" > ", path.ToArray))
                 Return url
 
             Catch ex As Exception
@@ -61,7 +50,7 @@ Namespace WSC.MediaPickerPreview
 
         Public Sub umbracoPage_Load(sender As Object, e As EventArgs)
             Dim p As Page = DirectCast(sender, Page)
-            Dim script As String = "$(function(){$('.treePickerTitle').each(function(i,e){ var container = $(this).parent().parent();var image = $('<img />',{ style: 'width:200px; margin-top: 10px; display:block;'}).appendTo(container);var input = container.find('input');var _default = input.val();input.on('change', function(){image.hide().prop('src','');var url = '/base/MediaPickerPreview/GetImageUrl/'+ input.val() +'/200';$.get(url, function(data){ if (data != ''){ image.prop('src', data).show(); } });}).trigger('change');setInterval(function () {if (input.val() !== _default ) { input.trigger('change'); _default  = input.val(); }}, 1000);});});"
+            Dim script As String = "$(function(){$('.treePickerTitle').each(function(i,e){var title = $(this);var container = title.parent().parent();var path = $('<div />',{ style: 'margin-top: 10px;'}).appendTo(container);var image = $('<img />',{ style: 'width:200px;'}).appendTo(container);var input = container.find('input');var _default = input.val();input.on('change', function(){image.hide().prop('src','');var url='/base/MediaPickerPreview/GetImageUrl/'+ input.val() +'/200';$.get(url, function(data){if (data != ''){ image.prop('src', data).show();}});path.html(title.attr('title'));}).trigger('change');setInterval(function () {if (input.val() !== _default ) { input.trigger('change'); _default  = input.val(); }}, 1000);});});"
             p.Page.ClientScript.RegisterClientScriptBlock(p.GetType, "MediaPickerPreview", script, True)
         End Sub
 
